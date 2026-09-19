@@ -1,0 +1,67 @@
+--CREAR NUEVO USUARIO
+ALTER PROCEDURE NuevoUsuarioPersona
+    @Nombre varchar(50),
+    @ApellidoPaterno varchar(50),
+    @ApellidoMaterno varchar(50),
+    @NombreUsuario varchar(50),
+    @Password varchar(50),
+    @RolesId varchar(50)
+AS
+BEGIN
+ BEGIN TRY
+
+    BEGIN TRANSACTION;
+    DECLARE @UsuarioId int
+
+    -- Inserta Seguridad.Usuarios
+    INSERT INTO Seguridad.Usuarios(NombreUsuario, Password) VALUES (@NombreUsuario,@Password);
+
+    -- Capturamos el último ID generado en este ámbito
+    SET @UsuarioId = SCOPE_IDENTITY();
+    --//////////////////////////////////////////////////////////////////////////////////////////////////
+
+    -- Inserta Seguridad.UsuariosPersona
+    INSERT INTO Seguridad.UsuariosPersona(UsuarioPersonaId, Nombre, ApellidoPaterno, ApellidoMaterno) VALUES (@UsuarioId, @Nombre, @ApellidoPaterno, @ApellidoMaterno);
+
+    --//////////////////////////////////////////////////////////////////////////////////////////////////
+
+    INSERT INTO Seguridad.UsuariosRoles (UsuarioId, RolId)
+    SELECT @UsuarioId, LTRIM(RTRIM(value))
+    FROM STRING_SPLIT(@RolesId, ',');
+
+    --Inserta Seguridad.UsuariosRoles
+    -- Bucle WHILE para recorrer la cadena
+    --WHILE CHARINDEX(',', @RolesId) > 0
+    --    DECLARE @posicion INT;
+    --    DECLARE @valor varchar;
+    --    BEGIN
+       
+    --        -- Obtener la posición de la primera coma
+    --        SET @posicion = CHARINDEX(',', @RolesId);
+    
+    --        -- Extraer el valor desde el inicio hasta la coma
+    --        SET @valor = LTRIM(RTRIM(SUBSTRING(@RolesId, 1, @posicion - 1)));
+    
+    --        -- Insertar si el valor no está vacío
+    --        IF LEN(@valor) > 0
+    --        BEGIN
+    --            INSERT INTO Seguridad.UsuariosRoles(UsuarioId, RolId) VALUES (@UsuarioId,@valor);
+    --        END
+    
+    --        -- Recortar la cadena eliminando el valor ya procesado
+    --        SET @RolesId = SUBSTRING(@RolesId, @posicion + 1, LEN(@RolesId));
+       
+    -- END
+     COMMIT TRANSACTION;
+  END TRY
+  BEGIN CATCH
+        -- Si hay error, se revierte la transacción
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+            
+        -- Opcional: obtener detalles del error
+        SELECT 
+            ERROR_NUMBER() AS NumeroError,
+            ERROR_MESSAGE() AS MensajeError;
+    END CATCH
+END;
