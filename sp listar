@@ -1,0 +1,25 @@
+-- LISTAR USUARIOS
+CREATE PROCEDURE ListarUsuarioPersona
+   
+AS
+BEGIN
+    
+    SELECT 
+        u.UsuarioId,
+        u.NombreUsuario,
+        u.Password,
+        p.Nombre,
+        p.ApellidoPaterno,
+        p.ApellidoMaterno,
+        (
+            SELECT STRING_AGG(Nombre, ',')
+            FROM Seguridad.Roles
+            INNER JOIN Seguridad.UsuariosRoles on Roles.RolId = UsuariosRoles.RolId
+            WHERE UsuariosRoles.UsuarioId = u.UsuarioId
+        ) AS Roles
+    FROM Seguridad.Usuarios u
+    INNER JOIN Seguridad.UsuariosPersona p on u.UsuarioId = p.UsuarioPersonaId
+
+END;
+
+EXEC ListarUsuarioPersona;
